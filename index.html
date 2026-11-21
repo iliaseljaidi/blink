@@ -23,32 +23,45 @@
     </section>
   </main>
 
-  <svg id="character" viewBox="0 0 440 400">
-    <defs>
-      <clipPath id="eyeClip"><path class="eye-shape"/></clipPath>
-    </defs>
-    <g id="char" opacity="0">
-      <g id="eyeLeft">
+<svg id="character" viewBox="0 0 440 400">
+  <defs>
+    <clipPath id="eyeClip"><path class="eye-shape"/></clipPath>
+    <clipPath id="browClipL"><polygon id="browPolyL"/></clipPath>
+    <clipPath id="browClipR"><polygon id="browPolyR"/></clipPath>
+  </defs>
+  <g id="char" opacity="0">
+    <g id="eyeLeft">
+      <g clip-path="url(#browClipL)">
         <path class="eye-shape" fill="#fff"/>
         <g clip-path="url(#eyeClip)"><circle class="iris" fill="#d62020"/></g>
         <path class="eye-shape" fill="none" stroke="#111" stroke-width="7" stroke-linejoin="round"/>
-        <path class="lashes" fill="none" stroke="#111" stroke-width="7" stroke-linecap="round"/>
       </g>
-      <g id="eyeRight" transform="translate(240,0)">
-        <path class="eye-shape" fill="#fff"/>
-        <g clip-path="url(#eyeClip)"><circle class="iris" fill="#d62020"/></g>
-        <path class="eye-shape" fill="none" stroke="#111" stroke-width="7" stroke-linejoin="round"/>
-        <path class="lashes" fill="none" stroke="#111" stroke-width="7" stroke-linecap="round"/>
-      </g>
-      <circle class="blush" cx="45" cy="235" r="20" fill="#c43df0"/>
-      <circle class="blush" cx="395" cy="235" r="20" fill="#c43df0"/>
-      <g id="mouthBar">
-        <path d="M170,310 L270,310 M170,298 L170,322 M270,298 L270,322"
-              fill="none" stroke="#111" stroke-width="7" stroke-linecap="round"/>
-      </g>
-      <ellipse id="mouthO" cx="220" cy="315" rx="34" ry="40" fill="#111"/>
+      <path class="lashes" fill="none" stroke="#111" stroke-width="7" stroke-linecap="round"/>
+      <path id="browBarL" fill="none" stroke="#111" stroke-width="16" stroke-linecap="round"/>
     </g>
-  </svg>
+    <g id="eyeRight" transform="translate(240,0)">
+      <g clip-path="url(#browClipR)">
+        <path class="eye-shape" fill="#fff"/>
+        <g clip-path="url(#eyeClip)"><circle class="iris" fill="#d62020"/></g>
+        <path class="eye-shape" fill="none" stroke="#111" stroke-width="7" stroke-linejoin="round"/>
+      </g>
+      <path class="lashes" fill="none" stroke="#111" stroke-width="7" stroke-linecap="round"/>
+      <path id="browBarR" fill="none" stroke="#111" stroke-width="16" stroke-linecap="round"/>
+    </g>
+    <circle class="blush" cx="45" cy="235" r="20" fill="#c43df0"/>
+    <circle class="blush" cx="395" cy="235" r="20" fill="#c43df0"/>
+    <g id="mouthBar">
+      <path d="M170,310 L270,310 M170,298 L170,322 M270,298 L270,322"
+            fill="none" stroke="#111" stroke-width="7" stroke-linecap="round"/>
+    </g>
+    <ellipse id="mouthO" cx="220" cy="315" rx="34" ry="40" fill="#111"/>
+    <g id="mouthFang" fill="#fff" stroke="#111" stroke-width="6" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M160,300 L280,300" fill="none"/>
+      <path d="M172,300 L188,334 L204,300 Z"/>
+      <path d="M236,300 L252,334 L268,300 Z"/>
+    </g>
+  </g>
+</svg>
 
   <div id="caption"></div>
 

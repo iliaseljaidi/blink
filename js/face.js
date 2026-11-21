@@ -1,13 +1,24 @@
 // face.js: the character.
 // A "pose" is just a list of numbers. The animator blends between poses.
 
+// Every pose starts from these defaults (this is the calm face)
+const BASE = {
+  alpha: 1, scale: 1,                          // visibility and size
+  c: 120, t: 30, b: 210,                       // eye shape: corners / top curve / bottom curve
+  irisR: 36, irisDx: 0, irisDy: -20,           // iris size and position
+  lash: 28, blush: 0,                          // lash length, blush visibility
+  bar: 0, o: 0, fang: 0,                       // which mouth shows
+  browA: -100, browB: -100,                    // brow edge height at the outer / inner end (-100 = no brow)
+  shake: 0,                                    // trembling
+};
+
 // ---- Poses. To make a new expression, add a line here. ----
 export const PRESETS = {
-  //          visible  size   eye shape: corners / top / bottom   iris: size, x, y      lashes  blush  mouths
-  hidden:  { alpha: 0, scale: 0.9, c: 120, t: 120, b: 120, irisR: 36, irisDx: 0,   irisDy: -20, lash: 0,  blush: 0, bar: 0, o: 0 },
-  calm:    { alpha: 1, scale: 1,   c: 120, t: 30,  b: 210, irisR: 36, irisDx: 0,   irisDy: -20, lash: 28, blush: 0, bar: 0, o: 0 },
-  shy:     { alpha: 1, scale: 1,   c: 135, t: 70,  b: 205, irisR: 30, irisDx: -25, irisDy: -4,  lash: 24, blush: 1, bar: 1, o: 0 },
-  shocked: { alpha: 1, scale: 1,   c: 120, t: 0,   b: 240, irisR: 32, irisDx: 0,   irisDy: 0,   lash: 30, blush: 0, bar: 0, o: 1 },
+  hidden:  { ...BASE, alpha: 0, scale: 0.9, t: 120, b: 120, lash: 0 },
+  calm:    { ...BASE },
+  shy:     { ...BASE, c: 135, t: 70, b: 205, irisR: 30, irisDx: -25, irisDy: -4, lash: 24, blush: 1, bar: 1 },
+  shocked: { ...BASE, t: 0, b: 240, irisR: 32, irisDy: 0, lash: 30, o: 1 },
+  angry:   { ...BASE, c: 125, t: 50, b: 205, irisR: 28, irisDy: 10, lash: 0, fang: 1, browA: 65, browB: 128, shake: 3 },
 };
 
 // The current pose (starts hidden). The animator changes these numbers over time.
@@ -24,6 +35,9 @@ const blushes = document.querySelectorAll(".blush");
 const root = document.getElementById("char");
 const mouthBar = document.getElementById("mouthBar");
 const mouthO = document.getElementById("mouthO");
+const mouthFang = document.getElementById("mouthFang");
+const browPolys = [document.getElementById("browPolyL"), document.getElementById("browPolyR")];
+const browBars = [document.getElementById("browBarL"), document.getElementById("browBarR")];
 
 const about = (x, y, s) => `translate(${x} ${y}) scale(${s}) translate(${-x} ${-y})`;
 
@@ -53,15 +67,32 @@ function render() {
     l.setAttribute("opacity", Math.min(1, L / 10));
   });
 
+  // Brows: a slanted edge cuts the top of each eye, and a thick black bar sits on that edge.
+  // The left eye's outer end is on its left; the right eye is the mirror image.
+  const A = p.browA, B = p.browB;
+  browPolys[0].setAttribute("points", `-20,${A} 230,${B} 230,400 -20,400`);
+  browPolys[1].setAttribute("points", `230,${A} -20,${B} -20,400 230,400`);
+  browBars[0].setAttribute("d", `M-8,${A - 9} L208,${B - 9}`);
+  browBars[1].setAttribute("d", `M208,${A - 9} L-8,${B - 9}`);
+  const browOpacity = Math.max(0, Math.min(1, (A + 100) / 50));
+  browBars.forEach((b) => b.setAttribute("opacity", browOpacity));
+
   blushes.forEach((b) => b.setAttribute("opacity", p.blush));
 
   mouthBar.setAttribute("opacity", p.bar);
   mouthBar.setAttribute("transform", about(220, 310, 0.6 + 0.4 * p.bar));
   mouthO.setAttribute("opacity", p.o);
   mouthO.setAttribute("transform", about(220, 315, 0.6 + 0.4 * p.o));
+  mouthFang.setAttribute("opacity", p.fang);
+  mouthFang.setAttribute("transform", about(220, 310, 0.6 + 0.4 * p.fang));
+
+  // Trembling (used by the angry face)
+  const now = performance.now();
+  const sx = Math.sin(now * 0.09) * p.shake;
+  const sy = Math.cos(now * 0.11) * p.shake * 0.6;
 
   root.setAttribute("opacity", p.alpha);
-  root.setAttribute("transform", about(220, 120, p.scale));
+  root.setAttribute("transform", `translate(${sx} ${sy}) ${about(220, 120, p.scale)}`);
 }
 
 // ---- The animator ----
@@ -108,5 +139,7 @@ export function tick(dt) {
     if (k >= 1) current = null;
   }
 
-  render();   // always redraw, so the wandering irises show even when no animation is playing
+  render();   // always redraw, so wandering irises and trembling show even when nothing is playing
 }
+
+render();

@@ -24,8 +24,14 @@ const MILESTONES = [
   { at: 6, text: "I love it when you look away." },
   { at: 15, text: "Don't turn around. I'm having a moment." },
 ];
-
 const TIDY_LINES = ["Nothing to see here.", "Just a normal website.", "Everything is fine."];
+const FROZEN_POKE_LINES = [
+  "I can't move when you look at me. Stop poking.",
+  "Please don't touch the website.",
+  "I'm frozen. This is rude.",
+];
+const ANGRY_LINES = ["Hey.", "Stop it.", "I said STOP.", "...You're really doing this."];
+
 // ---- The face's keyframe sequences ----
 function openEyes() {
   play([{ to: "calm", dur: 0.7, ease: "out" }]);
@@ -69,6 +75,7 @@ const things = [...document.querySelectorAll(
   };
 });
 
+// ---- State ----
 let alive = false;
 let hasBeenAlive = false;
 let eyesOpen = false;
@@ -76,6 +83,7 @@ let milestoneIndex = 0;
 let t = 0;                       // seconds alive in total (stops when watched)
 let awayTime = 0;                // seconds since you last looked away
 let last = performance.now();
+
 const HOLD_BEFORE_TIDY = 2.5;    // seconds of being watched before everything goes back
 let watchedTime = 0;             // how long you've been watching
 let spread = 1;                  // 1 = items out where they drifted, 0 = back home
@@ -88,7 +96,7 @@ window.addEventListener("watchedchange", (e) => {
     tidySaid = false;
     awayTime = 0;
     eyesOpen = false;
-    hideFace();
+    hideFace();                                         // looked away again: face disappears
     say(pick(WAKE_LINES));
     hasBeenAlive = true;
   } else if (hasBeenAlive) {
@@ -101,44 +109,27 @@ window.addEventListener("watchedchange", (e) => {
 });
 
 // ---- Clicking and poking ----
-const FROZEN_POKE_LINES = [
-  "I can't move when you look at me. Stop poking.",
-  "Please don't touch the website.",
-  "I'm frozen. This is rude.",
-];
-const OW_LINES = ["Ow!", "Hey!", "That tickles.", "Rude."];
-
 let pokes = 0;
 let lastPoke = 0;
 
 function poke() {
   const now = performance.now();
-  pokes = now - lastPoke < 4000 ? pokes + 1 : 1;   // pokes only count if they're close together
+  pokes = now - lastPoke < 4000 ? pokes + 1 : 1;        // pokes only count if they're close together
   lastPoke = now;
 
-  if (pokes >= 3) {                                // third quick poke: fed up
-    say("Okay. That's enough.");
-    play([
-      { to: "shocked", with: { scale: 1.2 }, dur: 0.08, ease: "out" },
-      { to: "shocked", dur: 0.1 },
-      { hold: 0.6 },
-      { to: "calm", dur: 0.4 },
-    ]);
-    pokes = 0;
-  } else {
-    say(pick(OW_LINES));
-    play([
-      { to: Math.random() < 0.5 ? "shy" : "shocked", dur: 0.1, ease: "out" },
-      { hold: 0.5 },
-      { to: "calm", dur: 0.3 },
-    ]);
-  }
+  say(ANGRY_LINES[Math.min(pokes, ANGRY_LINES.length) - 1]);   // gets angrier with each poke
+  play([
+    { to: "angry", with: { scale: 1.12 }, dur: 0.1, ease: "out" },   // brows slam down
+    { to: "angry", dur: 0.15, ease: "inOut" },
+    { hold: 0.6 + pokes * 0.3 },                                      // angrier pokes stay longer
+    { to: "calm", dur: 0.4, ease: "inOut" },
+  ]);
 }
 
 window.addEventListener("click", (e) => {
-  burst(e.clientX, e.clientY);                      // every click pops the lines
+  burst(e.clientX, e.clientY);                          // every click pops the lines
 
-  if (!alive) {                                     // you're looking: it's frozen
+  if (!alive) {                                         // you're looking: it's frozen
     say(pick(FROZEN_POKE_LINES));
     return;
   }
@@ -150,6 +141,7 @@ window.addEventListener("click", (e) => {
   if (eyesOpen && onFace) poke();
 });
 
+// ---- The main loop ----
 function frame(now) {
   const dt = Math.min((now - last) / 1000, 0.1);
   last = now;
@@ -169,7 +161,7 @@ function frame(now) {
     }
   }
 
-    // Tidy up: after being watched for a while, everything slides back home
+  // Tidy up: after being watched for a while, everything slides back home
   if (alive) {
     spread = Math.min(1, spread + dt / 0.8);            // slides back out when you look away
   } else {
@@ -193,7 +185,8 @@ function frame(now) {
     const s = 1 + Math.sin(t * 1.5 + o.pr) * 0.06 * amp * home;
     o.el.style.transform = `translate(${x}px, ${y}px) rotate(${r}deg) scale(${s})`;
   }
-    // Irises wander while you're away
+
+  // Irises wander while you're away
   wander.x = Math.sin(t * 0.9) * 16;
   wander.y = Math.sin(t * 1.3) * 7;
 
