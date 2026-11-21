@@ -39,19 +39,24 @@ function openEyes() {
 function hideFace() {
   play([{ to: "hidden", dur: 0.2, ease: "in" }]);
 }
+// The face pops into the random lines at the centre of the screen
+function popFace() {
+  burst(innerWidth / 2, innerHeight / 2, { count: 16, near: 70, far: 170 });
+}
+
 function reactToBeingCaught() {
   if (Math.random() < 0.5) {
     play([                                              // SHOCKED: sharp pop, then settle
       { to: "shocked", with: { scale: 1.15 }, dur: 0.1, ease: "out" },
       { to: "shocked", dur: 0.15, ease: "inOut" },
       { hold: 1.4 },
-      { to: "hidden", dur: 0.25, ease: "in" },
+      { to: "hidden", dur: 0.25, ease: "in", onStart: popFace },
     ]);
   } else {
     play([                                              // SHY: softer, with a little bounce
       { to: "shy", dur: 0.35, ease: "back" },
       { hold: 1.5 },
-      { to: "hidden", dur: 0.3, ease: "in" },
+      { to: "hidden", dur: 0.3, ease: "in", onStart: popFace },
     ]);
   }
 }

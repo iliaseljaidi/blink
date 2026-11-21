@@ -117,6 +117,7 @@ export function play(steps) {
     target: s.hold !== undefined ? {} : { ...(typeof s.to === "string" ? PRESETS[s.to] : s.to), ...s.with },
     dur: s.hold !== undefined ? s.hold : (s.dur ?? 0.3),
     ease: EASE[s.ease || "inOut"],
+    onStart: s.onStart,
   }));
   current = null;
 }
@@ -125,6 +126,7 @@ export function tick(dt) {
   // Start the next step if nothing is playing
   if (!current && queue.length > 0) {
     const step = queue.shift();
+    if (step.onStart) step.onStart();
     current = { from: { ...pose }, to: step.target, dur: step.dur, ease: step.ease, time: 0 };
   }
 
