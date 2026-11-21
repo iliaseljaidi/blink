@@ -18,6 +18,5 @@ h1 { font-size: 2.6rem; max-width: 700px; margin: 0 auto 16px; }
 #hud video { width: 160px; transform: scaleX(-1); display: block; }
 #label { font-size: 1rem; }
 
-/* Temporary: just to SEE the state changing */
-body.alive { background: #1a1a2e; }
-body.alive h1, body.alive #sub { color: #ff4d6d; }
+.nav a { display: inline-block; }
+body { overflow-x: hidden; }
