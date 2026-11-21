@@ -1,3 +1,5 @@
+import { play, tick, wander } from "./face.js";
+
 // ---- The page's voice: a caption that fades in and out ----
 const caption = document.getElementById("caption");
 let hideTimer;
@@ -22,8 +24,32 @@ const MILESTONES = [
   { at: 15, text: "Don't turn around. I'm having a moment." },
 ];
 
+// ---- The face's keyframe sequences ----
+function openEyes() {
+  play([{ to: "calm", dur: 0.7, ease: "out" }]);
+}
+function hideFace() {
+  play([{ to: "hidden", dur: 0.2, ease: "in" }]);
+}
+function reactToBeingCaught() {
+  if (Math.random() < 0.5) {
+    play([                                              // SHOCKED: sharp pop, then settle
+      { to: "shocked", with: { scale: 1.15 }, dur: 0.1, ease: "out" },
+      { to: "shocked", dur: 0.15, ease: "inOut" },
+      { hold: 1.4 },
+      { to: "hidden", dur: 0.25, ease: "in" },
+    ]);
+  } else {
+    play([                                              // SHY: softer, with a little bounce
+      { to: "shy", dur: 0.35, ease: "back" },
+      { hold: 1.5 },
+      { to: "hidden", dur: 0.3, ease: "in" },
+    ]);
+  }
+}
+
 // ---- Things that move. Each knows which way is "outward" from the centre ----
-const PUSH = 240;                // how far text is pushed out to empty the middle
+const PUSH = 240;
 const things = [...document.querySelectorAll(
   "#headline, #sub, #cta, .card, .logo, .nav a"
 )].map((el) => {
@@ -41,28 +67,9 @@ const things = [...document.querySelectorAll(
   };
 });
 
-const face = document.getElementById("face");
-const irises = document.querySelectorAll(".iris");
-
-// ---- Reaction faces (shy / shocked) ----
-const reaction = document.getElementById("reaction");
-const expressions = [document.getElementById("shy"), document.getElementById("shocked")];
-let reactTimer;
-
-function showReaction() {
-  const chosen = pick(expressions);                   // random: shy or shocked
-  expressions.forEach((x) => x.classList.toggle("on", x === chosen));
-  reaction.classList.add("show");
-  clearTimeout(reactTimer);
-  reactTimer = setTimeout(() => reaction.classList.remove("show"), 1800);
-}
-function hideReaction() {
-  clearTimeout(reactTimer);
-  reaction.classList.remove("show");
-}
-
 let alive = false;
 let hasBeenAlive = false;
+let eyesOpen = false;
 let milestoneIndex = 0;
 let t = 0;                       // seconds alive in total (stops when watched)
 let awayTime = 0;                // seconds since you last looked away
@@ -72,18 +79,21 @@ window.addEventListener("watchedchange", (e) => {
   alive = !e.detail.watched;
   if (alive) {
     awayTime = 0;
-    hideReaction();                                   // looked away again: face disappears
+    eyesOpen = false;
+    hideFace();                                         // looked away again: face disappears
     say(pick(WAKE_LINES));
     hasBeenAlive = true;
   } else if (hasBeenAlive) {
-    // Caught! If the eyes were open, the face reacts
-    if (face.classList.contains("open")) showReaction();
+    if (eyesOpen) {                                     // caught with eyes open: the face reacts
+      eyesOpen = false;
+      reactToBeingCaught();
+    }
     say(pick(CAUGHT_LINES));
   }
 });
 
 function frame(now) {
-  const dt = (now - last) / 1000;
+  const dt = Math.min((now - last) / 1000, 0.1);
   last = now;
 
   if (alive) {
@@ -94,12 +104,17 @@ function frame(now) {
       say(MILESTONES[milestoneIndex].text);
       milestoneIndex++;
     }
+
+    if (!eyesOpen && awayTime > 5) {                    // 5 seconds away: eyes open
+      eyesOpen = true;
+      openEyes();
+    }
   }
 
   const eased = Math.min(1, t / 3);
   const boldness = 0.4 + Math.min(1, t / 20) * 0.6;
   const amp = eased * boldness;
-  const push = PUSH * Math.min(1, t / 6);   // empties the middle over the first 6 seconds
+  const push = PUSH * Math.min(1, t / 6);
 
   for (const o of things) {
     const x = Math.sin(t * o.sx + o.px) * 70 * amp + o.dirX * push;
@@ -109,15 +124,11 @@ function frame(now) {
     o.el.style.transform = `translate(${x}px, ${y}px) rotate(${r}deg) scale(${s})`;
   }
 
-  // Eyes open after 5 seconds away, snap shut the moment you look back
-  face.classList.toggle("open", alive && awayTime > 5);
+  // Irises wander while you're away
+  wander.x = Math.sin(t * 0.9) * 16;
+  wander.y = Math.sin(t * 1.3) * 7;
 
-  // Irises wander around looking for you
-  irises.forEach((p, i) => {
-    const ix = Math.sin(t * 0.9 + i) * 16;
-    const iy = Math.sin(t * 1.3 + i * 2) * 7;
-    p.style.transform = `translate(${ix}px, ${iy}px)`;
-  });
+  tick(dt);                                             // the face animates in real time, even when the page is frozen
 
   requestAnimationFrame(frame);
 }

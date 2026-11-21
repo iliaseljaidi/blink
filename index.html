@@ -22,65 +22,36 @@
       <div class="card">Seamless</div>
     </section>
   </main>
-  <svg id="face" viewBox="0 0 440 240">
-  <defs>
-    <clipPath id="eyeClip"><path d="M10,120 Q105,30 200,120 Q105,210 10,120 Z"/></clipPath>
-  </defs>
-  <g class="eye-group">
-    <g class="eye">
-      <path d="M10,120 Q105,30 200,120 Q105,210 10,120 Z" fill="#fff"/>
-      <g clip-path="url(#eyeClip)"><circle class="iris" cx="105" cy="100" r="36" fill="#d62020"/></g>
-      <path d="M10,120 Q105,30 200,120 Q105,210 10,120 Z" fill="none" stroke="#111" stroke-width="7" stroke-linejoin="round"/>
-      <path d="M60,62 L48,34 M105,48 L105,18 M150,62 L162,34" stroke="#111" stroke-width="7" stroke-linecap="round"/>
+
+  <svg id="character" viewBox="0 0 440 400">
+    <defs>
+      <clipPath id="eyeClip"><path class="eye-shape"/></clipPath>
+    </defs>
+    <g id="char" opacity="0">
+      <g id="eyeLeft">
+        <path class="eye-shape" fill="#fff"/>
+        <g clip-path="url(#eyeClip)"><circle class="iris" fill="#d62020"/></g>
+        <path class="eye-shape" fill="none" stroke="#111" stroke-width="7" stroke-linejoin="round"/>
+        <path class="lashes" fill="none" stroke="#111" stroke-width="7" stroke-linecap="round"/>
+      </g>
+      <g id="eyeRight" transform="translate(240,0)">
+        <path class="eye-shape" fill="#fff"/>
+        <g clip-path="url(#eyeClip)"><circle class="iris" fill="#d62020"/></g>
+        <path class="eye-shape" fill="none" stroke="#111" stroke-width="7" stroke-linejoin="round"/>
+        <path class="lashes" fill="none" stroke="#111" stroke-width="7" stroke-linecap="round"/>
+      </g>
+      <circle class="blush" cx="45" cy="235" r="20" fill="#c43df0"/>
+      <circle class="blush" cx="395" cy="235" r="20" fill="#c43df0"/>
+      <g id="mouthBar">
+        <path d="M170,310 L270,310 M170,298 L170,322 M270,298 L270,322"
+              fill="none" stroke="#111" stroke-width="7" stroke-linecap="round"/>
+      </g>
+      <ellipse id="mouthO" cx="220" cy="315" rx="34" ry="40" fill="#111"/>
     </g>
-    <g class="eye" transform="translate(240,0)">
-      <path d="M10,120 Q105,30 200,120 Q105,210 10,120 Z" fill="#fff"/>
-      <g clip-path="url(#eyeClip)"><circle class="iris" cx="105" cy="100" r="36" fill="#d62020"/></g>
-      <path d="M10,120 Q105,30 200,120 Q105,210 10,120 Z" fill="none" stroke="#111" stroke-width="7" stroke-linejoin="round"/>
-      <path d="M60,62 L48,34 M105,48 L105,18 M150,62 L162,34" stroke="#111" stroke-width="7" stroke-linecap="round"/>
-    </g>
-  </g>
   </svg>
-  <svg id="reaction" viewBox="0 0 440 400">
-  <defs>
-    <clipPath id="clipShy"><path d="M10,135 Q105,70 200,135 Q105,205 10,135 Z"/></clipPath>
-    <clipPath id="clipShock"><path d="M10,120 Q105,0 200,120 Q105,240 10,120 Z"/></clipPath>
 
-    <!-- one shy eye -->
-    <g id="shyEye">
-      <path d="M10,135 Q105,70 200,135 Q105,205 10,135 Z" fill="#fff"/>
-      <g clip-path="url(#clipShy)"><circle cx="80" cy="132" r="30" fill="#d62020"/></g>
-      <path d="M10,135 Q105,70 200,135 Q105,205 10,135 Z" fill="none" stroke="#111" stroke-width="7" stroke-linejoin="round"/>
-      <path d="M60,92 L50,68 M105,82 L105,55 M150,92 L160,68" stroke="#111" stroke-width="7" stroke-linecap="round"/>
-    </g>
-
-    <!-- one shocked eye -->
-    <g id="shockEye">
-      <path d="M10,120 Q105,0 200,120 Q105,240 10,120 Z" fill="#fff"/>
-      <g clip-path="url(#clipShock)"><circle cx="105" cy="120" r="32" fill="#d62020"/></g>
-      <path d="M10,120 Q105,0 200,120 Q105,240 10,120 Z" fill="none" stroke="#111" stroke-width="7" stroke-linejoin="round"/>
-      <path d="M55,62 L42,32 M105,42 L105,10 M155,62 L168,32" stroke="#111" stroke-width="7" stroke-linecap="round"/>
-    </g>
-  </defs>
-
-  <!-- SHY: lowered eyes, blush dots, flat mouth with end ticks -->
-  <g id="shy" class="expr">
-    <use href="#shyEye"/>
-    <use href="#shyEye" x="240"/>
-    <circle cx="45" cy="235" r="20" fill="#c43df0"/>
-    <circle cx="395" cy="235" r="20" fill="#c43df0"/>
-    <path d="M170,310 L270,310 M170,298 L170,322 M270,298 L270,322"
-          stroke="#111" stroke-width="7" stroke-linecap="round"/>
-  </g>
-
-  <!-- SHOCKED: wide eyes, round black mouth -->
-  <g id="shocked" class="expr">
-    <use href="#shockEye"/>
-    <use href="#shockEye" x="240"/>
-    <ellipse cx="220" cy="315" rx="34" ry="40" fill="#111"/>
-  </g>
-  </svg>
   <div id="caption"></div>
+
   <div id="hud">
     <div id="label">Loading...</div>
     <pre id="debug"></pre>
