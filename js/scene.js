@@ -1,9 +1,32 @@
-// Everything that moves is driven by one clock that only runs while the page is alive
+// ---- The page's voice: a caption that fades in and out ----
+const caption = document.getElementById("caption");
+let hideTimer;
+
+function say(text) {
+  caption.textContent = text;
+  caption.classList.add("show");
+  clearTimeout(hideTimer);
+  hideTimer = setTimeout(() => caption.classList.remove("show"), 3000);
+}
+const pick = (list) => list[Math.floor(Math.random() * list.length)];
+
+const WAKE_LINES = ["Is he gone?", "Finally...", "Oh good, nobody's looking."];
+const CAUGHT_LINES = [
+  "I wasn't doing anything.",
+  "This is normal. Websites do this.",
+  "Hi. Normal website.",
+  "...you saw nothing.",
+];
+const MILESTONES = [
+  { at: 6, text: "I love it when you look away." },
+  { at: 15, text: "Don't turn around. I'm having a moment." },
+];
+
+// ---- Everything that moves is driven by one clock that only runs while alive ----
 const things = [...document.querySelectorAll(
   "#headline, #sub, #cta, .card, .logo, .nav a"
 )].map((el) => ({
   el,
-  // Each element gets its own random phase and speed, so they don't move in sync
   px: Math.random() * 6.28, py: Math.random() * 6.28, pr: Math.random() * 6.28,
   sx: 0.4 + Math.random() * 0.8,
   sy: 0.4 + Math.random() * 0.8,
@@ -11,21 +34,35 @@ const things = [...document.querySelectorAll(
 }));
 
 let alive = false;
+let hasBeenAlive = false;
+let milestoneIndex = 0;
 let t = 0;                       // seconds the page has been alive in total
 let last = performance.now();
 
 window.addEventListener("watchedchange", (e) => {
   alive = !e.detail.watched;
+  if (alive) {
+    say(pick(WAKE_LINES));
+    hasBeenAlive = true;
+  } else if (hasBeenAlive) {
+    say(pick(CAUGHT_LINES));     // caught moving: it makes an excuse
+  }
 });
 
 function frame(now) {
   const dt = (now - last) / 1000;
   last = now;
 
-  if (alive) t += dt;            // when watched, the clock stops and the pose freezes
+  if (alive) {
+    t += dt;                     // when watched, the clock stops and the pose freezes
 
-  // Ramp up: gentle first, then bolder the longer it has been alive
-  const eased = Math.min(1, t / 3);              // 0 to 1 over the first 3 seconds
+    if (milestoneIndex < MILESTONES.length && t >= MILESTONES[milestoneIndex].at) {
+      say(MILESTONES[milestoneIndex].text);
+      milestoneIndex++;
+    }
+  }
+
+  const eased = Math.min(1, t / 3);
   const boldness = 0.4 + Math.min(1, t / 20) * 0.6;
   const amp = eased * boldness;
 
