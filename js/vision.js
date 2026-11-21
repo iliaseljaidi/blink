@@ -8,7 +8,7 @@ const video = document.getElementById("video");
 // ---- Tuning numbers: change these if it feels too strict or too loose ----
 const EYES_CLOSED_ABOVE = 0.5;   // blink score above this = eyes closed
 const HEAD_TO_EYE = 2.5;         // how much a head turn counts vs eye movement
-const EYE_SIGN = -1;              // flip to -1 if the side eye doesn't cancel the head turn
+const EYE_SIGN = -1;             // flip to 1 if the side eye behaves worse
 const GAZE_LIMIT = 0.35;         // how far the combined gaze can be off-centre
 const YAW_MAX = 0.4;             // hard limit: head turned too far is always "away"
 const FRAMES_TO_LOSE_WATCH = 6;  // about 0.2s at 30fps (ignores normal blinks)
@@ -32,7 +32,8 @@ const stream = await navigator.mediaDevices.getUserMedia({ video: true });
 video.srcObject = stream;
 await video.play();
 
-let watched = false;
+let watched = true;              // the page starts frozen
+let previousWatched = null;      // used to spot when the state changes
 let notLookingFrames = 0;
 let lastTime = -1;
 
@@ -82,6 +83,12 @@ function loop() {
     } else {
       notLookingFrames++;        // slow: ignore normal blinks
       if (notLookingFrames >= FRAMES_TO_LOSE_WATCH) watched = false;
+    }
+
+    // Tell the rest of the page when the state changes
+    if (watched !== previousWatched) {
+      previousWatched = watched;
+      window.dispatchEvent(new CustomEvent("watchedchange", { detail: { watched } }));
     }
 
     label.textContent = watched ? "WATCHED" : "NOT WATCHED";

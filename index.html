@@ -2,18 +2,34 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Blink</title>
-  <style>
-    body { font-family: sans-serif; text-align: center; background: #111; color: white; }
-    #label { font-size: 3rem; margin: 20px; }
-    video { width: 320px; border-radius: 8px; transform: scaleX(-1); }
-  </style>
+  <title>Synergix</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div id="label">Loading...</div>
-  <pre id="debug"></pre>
-  <video id="video" autoplay playsinline muted></video>
+  <header class="nav">
+    <div class="logo">Synergix</div>
+    <nav><a>Products</a><a>Solutions</a><a>Pricing</a><a>Contact</a></nav>
+  </header>
+
+  <main>
+    <h1 id="headline">Streamlining Tomorrow's Enterprise Solutions</h1>
+    <p id="sub">Leverage scalable, best-in-class synergies to drive measurable outcomes.</p>
+    <button id="cta">Request a Demo</button>
+
+    <section class="features">
+      <div class="card">Scalable</div>
+      <div class="card">Secure</div>
+      <div class="card">Seamless</div>
+    </section>
+  </main>
+
+  <div id="hud">
+    <div id="label">Loading...</div>
+    <pre id="debug"></pre>
+    <video id="video" autoplay playsinline muted></video>
+  </div>
+
   <script type="module" src="js/vision.js"></script>
-</script>
+  <script type="module" src="js/scene.js"></script>
 </body>
 </html>
