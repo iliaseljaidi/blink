@@ -22,6 +22,25 @@
       <div class="card">Seamless</div>
     </section>
   </main>
+  <svg id="face" viewBox="0 0 440 240">
+  <defs>
+    <clipPath id="eyeClip"><path d="M10,120 Q105,30 200,120 Q105,210 10,120 Z"/></clipPath>
+  </defs>
+  <g class="eye-group">
+    <g class="eye">
+      <path d="M10,120 Q105,30 200,120 Q105,210 10,120 Z" fill="#fff"/>
+      <g clip-path="url(#eyeClip)"><circle class="iris" cx="105" cy="100" r="36" fill="#d62020"/></g>
+      <path d="M10,120 Q105,30 200,120 Q105,210 10,120 Z" fill="none" stroke="#111" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M60,62 L48,34 M105,48 L105,18 M150,62 L162,34" stroke="#111" stroke-width="7" stroke-linecap="round"/>
+    </g>
+    <g class="eye" transform="translate(240,0)">
+      <path d="M10,120 Q105,30 200,120 Q105,210 10,120 Z" fill="#fff"/>
+      <g clip-path="url(#eyeClip)"><circle class="iris" cx="105" cy="100" r="36" fill="#d62020"/></g>
+      <path d="M10,120 Q105,30 200,120 Q105,210 10,120 Z" fill="none" stroke="#111" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M60,62 L48,34 M105,48 L105,18 M150,62 L162,34" stroke="#111" stroke-width="7" stroke-linecap="round"/>
+    </g>
+  </g>
+  </svg>
   <div id="caption"></div>
   <div id="hud">
     <div id="label">Loading...</div>

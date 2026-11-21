@@ -22,30 +22,43 @@ const MILESTONES = [
   { at: 15, text: "Don't turn around. I'm having a moment." },
 ];
 
-// ---- Everything that moves is driven by one clock that only runs while alive ----
+// ---- Things that move. Each knows which way is "outward" from the centre ----
+const PUSH = 240;                // how far text is pushed out to empty the middle
 const things = [...document.querySelectorAll(
   "#headline, #sub, #cta, .card, .logo, .nav a"
-)].map((el) => ({
-  el,
-  px: Math.random() * 6.28, py: Math.random() * 6.28, pr: Math.random() * 6.28,
-  sx: 0.4 + Math.random() * 0.8,
-  sy: 0.4 + Math.random() * 0.8,
-  sr: 0.4 + Math.random() * 0.8,
-}));
+)].map((el) => {
+  const r = el.getBoundingClientRect();
+  const dx = r.left + r.width / 2 - innerWidth / 2;
+  const dy = r.top + r.height / 2 - innerHeight / 2;
+  const len = Math.hypot(dx, dy) || 1;
+  return {
+    el,
+    dirX: dx / len, dirY: dy / len,
+    px: Math.random() * 6.28, py: Math.random() * 6.28, pr: Math.random() * 6.28,
+    sx: 0.4 + Math.random() * 0.8,
+    sy: 0.4 + Math.random() * 0.8,
+    sr: 0.4 + Math.random() * 0.8,
+  };
+});
+
+const face = document.getElementById("face");
+const irises = document.querySelectorAll(".iris");
 
 let alive = false;
 let hasBeenAlive = false;
 let milestoneIndex = 0;
-let t = 0;                       // seconds the page has been alive in total
+let t = 0;                       // seconds alive in total (stops when watched)
+let awayTime = 0;                // seconds since you last looked away
 let last = performance.now();
 
 window.addEventListener("watchedchange", (e) => {
   alive = !e.detail.watched;
   if (alive) {
+    awayTime = 0;
     say(pick(WAKE_LINES));
     hasBeenAlive = true;
   } else if (hasBeenAlive) {
-    say(pick(CAUGHT_LINES));     // caught moving: it makes an excuse
+    say(pick(CAUGHT_LINES));
   }
 });
 
@@ -54,7 +67,8 @@ function frame(now) {
   last = now;
 
   if (alive) {
-    t += dt;                     // when watched, the clock stops and the pose freezes
+    t += dt;
+    awayTime += dt;
 
     if (milestoneIndex < MILESTONES.length && t >= MILESTONES[milestoneIndex].at) {
       say(MILESTONES[milestoneIndex].text);
@@ -65,14 +79,25 @@ function frame(now) {
   const eased = Math.min(1, t / 3);
   const boldness = 0.4 + Math.min(1, t / 20) * 0.6;
   const amp = eased * boldness;
+  const push = PUSH * Math.min(1, t / 6);   // empties the middle over the first 6 seconds
 
   for (const o of things) {
-    const x = Math.sin(t * o.sx + o.px) * 70 * amp;
-    const y = Math.sin(t * o.sy + o.py) * 50 * amp;
+    const x = Math.sin(t * o.sx + o.px) * 70 * amp + o.dirX * push;
+    const y = Math.sin(t * o.sy + o.py) * 50 * amp + o.dirY * push;
     const r = Math.sin(t * o.sr + o.pr) * 10 * amp;
     const s = 1 + Math.sin(t * 1.5 + o.pr) * 0.06 * amp;
     o.el.style.transform = `translate(${x}px, ${y}px) rotate(${r}deg) scale(${s})`;
   }
+
+  // Eyes open after 5 seconds away, snap shut the moment you look back
+  face.classList.toggle("open", alive && awayTime > 5);
+
+  // Irises wander around looking for you
+  irises.forEach((p, i) => {
+    const ix = Math.sin(t * 0.9 + i) * 16;
+    const iy = Math.sin(t * 1.3 + i * 2) * 7;
+    p.style.transform = `translate(${ix}px, ${iy}px)`;
+  });
 
   requestAnimationFrame(frame);
 }
