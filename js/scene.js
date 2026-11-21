@@ -25,6 +25,8 @@ const MILESTONES = [
   { at: 15, text: "Don't turn around. I'm having a moment." },
 ];
 const TIDY_LINES = ["Nothing to see here.", "Just a normal website.", "Everything is fine."];
+const STARE_ANGRY_AT = 8;        // seconds of staring before it gets angry
+const STARE_FURIOUS_AT = 14;     // seconds of staring before it gets furious
 const FROZEN_POKE_LINES = [
   "I can't move when you look at me. Stop poking.",
   "Please don't touch the website.",
@@ -93,10 +95,19 @@ const HOLD_BEFORE_TIDY = 2.5;    // seconds of being watched before everything g
 let watchedTime = 0;             // how long you've been watching
 let spread = 1;                  // 1 = items out where they drifted, 0 = back home
 let tidySaid = false;
+let started = false;             // becomes true once the camera is running
+let stareStage = 0;              // 0 = calm, 1 = angry, 2 = furious
 
 window.addEventListener("watchedchange", (e) => {
+  if (!started) {                                       // first signal from the camera
+    started = true;
+    watchedTime = 0;                                    // don't count camera loading time as staring
+  }
+
   alive = !e.detail.watched;
   if (alive) {
+    if (stareStage > 0) popFace();                      // angry face bursts into lines
+    stareStage = 0;
     watchedTime = 0;
     tidySaid = false;
     awayTime = 0;
@@ -164,20 +175,35 @@ function frame(now) {
       eyesOpen = true;
       openEyes();
     }
-  }
+  }                                                     // <-- this closing brace was in the wrong place
 
   // Tidy up: after being watched for a while, everything slides back home
   if (alive) {
     spread = Math.min(1, spread + dt / 0.8);            // slides back out when you look away
   } else {
     watchedTime += dt;
+
+    // 1) After a few seconds of being watched, everything slides home
     if (hasBeenAlive && watchedTime > HOLD_BEFORE_TIDY && spread > 0) {
       if (!tidySaid) { tidySaid = true; say(pick(TIDY_LINES)); }
-      spread = Math.max(0, spread - dt / 0.8);          // slides home
+      spread = Math.max(0, spread - dt / 0.8);
+    }
+
+    // 2) Staring for a long time makes it angry, then furious
+    if (started && stareStage < 1 && watchedTime > STARE_ANGRY_AT) {
+      stareStage = 1;
+      say("What are you looking at?");
+      play([
+        { to: "angry", with: { scale: 1.12 }, dur: 0.12, ease: "out" },   // brows slam down
+        { to: "angry", dur: 0.2, ease: "inOut" },
+      ]);
+    } else if (stareStage === 1 && watchedTime > STARE_FURIOUS_AT) {
+      stareStage = 2;
+      say("I'M WARNING YOU.");
+      play([{ to: "angry", with: { scale: 1.18, shake: 9 }, dur: 0.3, ease: "out" }]);
     }
   }
   const home = spread * spread * (3 - 2 * spread);      // smooth start and stop
-
   const eased = Math.min(1, t / 3);
   const boldness = 0.4 + Math.min(1, t / 20) * 0.6;
   const amp = eased * boldness;
@@ -196,7 +222,7 @@ function frame(now) {
   wander.y = Math.sin(t * 1.3) * 7;
 
   tick(dt);                                             // the face animates in real time, even when the page is frozen
-
+    document.title = `watched=${watchedTime.toFixed(1)} stage=${stareStage} started=${started} alive=${alive}`;
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
