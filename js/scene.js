@@ -25,6 +25,7 @@ const MILESTONES = [
   { at: 15, text: "Don't turn around. I'm having a moment." },
 ];
 
+const TIDY_LINES = ["Nothing to see here.", "Just a normal website.", "Everything is fine."];
 // ---- The face's keyframe sequences ----
 function openEyes() {
   play([{ to: "calm", dur: 0.7, ease: "out" }]);
@@ -75,13 +76,19 @@ let milestoneIndex = 0;
 let t = 0;                       // seconds alive in total (stops when watched)
 let awayTime = 0;                // seconds since you last looked away
 let last = performance.now();
+const HOLD_BEFORE_TIDY = 2.5;    // seconds of being watched before everything goes back
+let watchedTime = 0;             // how long you've been watching
+let spread = 1;                  // 1 = items out where they drifted, 0 = back home
+let tidySaid = false;
 
 window.addEventListener("watchedchange", (e) => {
   alive = !e.detail.watched;
   if (alive) {
+    watchedTime = 0;
+    tidySaid = false;
     awayTime = 0;
     eyesOpen = false;
-    hideFace();                                         // looked away again: face disappears
+    hideFace();
     say(pick(WAKE_LINES));
     hasBeenAlive = true;
   } else if (hasBeenAlive) {
@@ -162,20 +169,31 @@ function frame(now) {
     }
   }
 
+    // Tidy up: after being watched for a while, everything slides back home
+  if (alive) {
+    spread = Math.min(1, spread + dt / 0.8);            // slides back out when you look away
+  } else {
+    watchedTime += dt;
+    if (hasBeenAlive && watchedTime > HOLD_BEFORE_TIDY && spread > 0) {
+      if (!tidySaid) { tidySaid = true; say(pick(TIDY_LINES)); }
+      spread = Math.max(0, spread - dt / 0.8);          // slides home
+    }
+  }
+  const home = spread * spread * (3 - 2 * spread);      // smooth start and stop
+
   const eased = Math.min(1, t / 3);
   const boldness = 0.4 + Math.min(1, t / 20) * 0.6;
   const amp = eased * boldness;
   const push = PUSH * Math.min(1, t / 6);
 
   for (const o of things) {
-    const x = Math.sin(t * o.sx + o.px) * 70 * amp + o.dirX * push;
-    const y = Math.sin(t * o.sy + o.py) * 50 * amp + o.dirY * push;
-    const r = Math.sin(t * o.sr + o.pr) * 10 * amp;
-    const s = 1 + Math.sin(t * 1.5 + o.pr) * 0.06 * amp;
+    const x = (Math.sin(t * o.sx + o.px) * 70 * amp + o.dirX * push) * home;
+    const y = (Math.sin(t * o.sy + o.py) * 50 * amp + o.dirY * push) * home;
+    const r = Math.sin(t * o.sr + o.pr) * 10 * amp * home;
+    const s = 1 + Math.sin(t * 1.5 + o.pr) * 0.06 * amp * home;
     o.el.style.transform = `translate(${x}px, ${y}px) rotate(${r}deg) scale(${s})`;
   }
-
-  // Irises wander while you're away
+    // Irises wander while you're away
   wander.x = Math.sin(t * 0.9) * 16;
   wander.y = Math.sin(t * 1.3) * 7;
 
