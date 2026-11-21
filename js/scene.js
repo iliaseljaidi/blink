@@ -1,4 +1,5 @@
 import { play, tick, wander } from "./face.js";
+import { burst } from "./effects.js";
 
 // ---- The page's voice: a caption that fades in and out ----
 const caption = document.getElementById("caption");
@@ -90,6 +91,56 @@ window.addEventListener("watchedchange", (e) => {
     }
     say(pick(CAUGHT_LINES));
   }
+});
+
+// ---- Clicking and poking ----
+const FROZEN_POKE_LINES = [
+  "I can't move when you look at me. Stop poking.",
+  "Please don't touch the website.",
+  "I'm frozen. This is rude.",
+];
+const OW_LINES = ["Ow!", "Hey!", "That tickles.", "Rude."];
+
+let pokes = 0;
+let lastPoke = 0;
+
+function poke() {
+  const now = performance.now();
+  pokes = now - lastPoke < 4000 ? pokes + 1 : 1;   // pokes only count if they're close together
+  lastPoke = now;
+
+  if (pokes >= 3) {                                // third quick poke: fed up
+    say("Okay. That's enough.");
+    play([
+      { to: "shocked", with: { scale: 1.2 }, dur: 0.08, ease: "out" },
+      { to: "shocked", dur: 0.1 },
+      { hold: 0.6 },
+      { to: "calm", dur: 0.4 },
+    ]);
+    pokes = 0;
+  } else {
+    say(pick(OW_LINES));
+    play([
+      { to: Math.random() < 0.5 ? "shy" : "shocked", dur: 0.1, ease: "out" },
+      { hold: 0.5 },
+      { to: "calm", dur: 0.3 },
+    ]);
+  }
+}
+
+window.addEventListener("click", (e) => {
+  burst(e.clientX, e.clientY);                      // every click pops the lines
+
+  if (!alive) {                                     // you're looking: it's frozen
+    say(pick(FROZEN_POKE_LINES));
+    return;
+  }
+
+  // The face sits in the middle of the screen
+  const onFace =
+    Math.abs(e.clientX - innerWidth / 2) < 220 &&
+    Math.abs(e.clientY - innerHeight / 2) < 130;
+  if (eyesOpen && onFace) poke();
 });
 
 function frame(now) {
