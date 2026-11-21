@@ -44,6 +44,23 @@ const things = [...document.querySelectorAll(
 const face = document.getElementById("face");
 const irises = document.querySelectorAll(".iris");
 
+// ---- Reaction faces (shy / shocked) ----
+const reaction = document.getElementById("reaction");
+const expressions = [document.getElementById("shy"), document.getElementById("shocked")];
+let reactTimer;
+
+function showReaction() {
+  const chosen = pick(expressions);                   // random: shy or shocked
+  expressions.forEach((x) => x.classList.toggle("on", x === chosen));
+  reaction.classList.add("show");
+  clearTimeout(reactTimer);
+  reactTimer = setTimeout(() => reaction.classList.remove("show"), 1800);
+}
+function hideReaction() {
+  clearTimeout(reactTimer);
+  reaction.classList.remove("show");
+}
+
 let alive = false;
 let hasBeenAlive = false;
 let milestoneIndex = 0;
@@ -55,9 +72,12 @@ window.addEventListener("watchedchange", (e) => {
   alive = !e.detail.watched;
   if (alive) {
     awayTime = 0;
+    hideReaction();                                   // looked away again: face disappears
     say(pick(WAKE_LINES));
     hasBeenAlive = true;
   } else if (hasBeenAlive) {
+    // Caught! If the eyes were open, the face reacts
+    if (face.classList.contains("open")) showReaction();
     say(pick(CAUGHT_LINES));
   }
 });

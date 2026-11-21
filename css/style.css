@@ -34,3 +34,11 @@ body { overflow-x: hidden; }
              transform: scaleY(0.05); transition: transform 0.08s; }
 #face.open .eye-group { transform: scaleY(1); transition: transform 0.7s; }
 html, body { overflow: hidden; }
+#reaction { position: fixed; left: 50%; top: calc(50% - 120px); width: 440px;
+            margin-left: -220px; pointer-events: none; z-index: 6;
+            opacity: 0; transform: scale(0.7); transform-origin: 50% 30%;
+            transition: opacity 0.3s, transform 0.3s; }
+#reaction.show { opacity: 1; transform: scale(1);
+                 transition: opacity 0.08s, transform 0.12s; }   /* pops in FAST */
+.expr { display: none; }
+.expr.on { display: inline; }
