@@ -101,6 +101,48 @@ let stareStage = 0;              // 0 = calm, 1 = angry, 2 = furious
 const FOLLOW_SIGN = 1;           // change to -1 if the eyes look the wrong way
 const follow = { x: 0, y: 0 };   // where the irises are looking (smoothed)
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+// ---- Tab title and icon ----
+const TITLE_NORMAL = "Synergix";
+const TITLES_AWAY = ["...is he gone?", "psst. over here.", "are you still there?", "come back..."];
+let titleTimer = 0;
+
+// Find (or create) the tab icon element
+let iconLink = document.querySelector("link[rel~='icon']");
+if (!iconLink) {
+  iconLink = document.createElement("link");
+  iconLink.rel = "icon";
+  document.head.appendChild(iconLink);
+}
+
+const ICON_SHUT =
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+     <rect width="64" height="64" rx="12" fill="#fff"/>
+     <path d="M6 34 Q18 38 28 34 M36 34 Q46 38 58 34" stroke="#111" stroke-width="5" stroke-linecap="round" fill="none"/>
+   </svg>`;
+const ICON_OPEN =
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+     <rect width="64" height="64" rx="12" fill="#fff"/>
+     <ellipse cx="18" cy="32" rx="13" ry="11" fill="#fff" stroke="#111" stroke-width="4"/>
+     <ellipse cx="46" cy="32" rx="13" ry="11" fill="#fff" stroke="#111" stroke-width="4"/>
+     <circle cx="18" cy="32" r="6" fill="#d62020"/>
+     <circle cx="46" cy="32" r="6" fill="#d62020"/>
+   </svg>`;
+
+function setIcon(open) {
+  iconLink.href = "data:image/svg+xml," + encodeURIComponent(open ? ICON_OPEN : ICON_SHUT);
+}
+setIcon(false);
+
+// If you actually switch to another tab, it calls you back
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    document.title = "Come back...";
+    setIcon(true);
+  } else {
+    document.title = alive ? pick(TITLES_AWAY) : TITLE_NORMAL;
+    setIcon(alive);
+  }
+});
 
 window.addEventListener("watchedchange", (e) => {
   if (!started) {                                       // first signal from the camera
@@ -109,6 +151,9 @@ window.addEventListener("watchedchange", (e) => {
   }
 
   alive = !e.detail.watched;
+  document.title = alive ? pick(TITLES_AWAY) : TITLE_NORMAL;   // tab title follows the state
+  setIcon(alive);
+  titleTimer = 0;
   if (alive) {
     if (stareStage > 0) popFace();                      // angry face bursts into lines
     stareStage = 0;
@@ -218,6 +263,8 @@ function frame(now) {
     const y = (Math.sin(t * o.sy + o.py) * 50 * amp + o.dirY * push) * home;
     const r = Math.sin(t * o.sr + o.pr) * 10 * amp * home;
     const s = 1 + Math.sin(t * 1.5 + o.pr) * 0.06 * amp * home;
+      titleTimer += dt;                                     // new tab title every few seconds while away
+  if (alive && titleTimer > 4) { titleTimer = 0; document.title = pick(TITLES_AWAY); }
     o.el.style.transform = `translate(${x}px, ${y}px) rotate(${r}deg) scale(${s})`;
   }
 
@@ -230,8 +277,7 @@ function frame(now) {
   wander.x = follow.x;
   wander.y = follow.y;
 
-  tick(dt);                                             // the face animates in real time, even when the page is frozen
-    document.title = `watched=${watchedTime.toFixed(1)} stage=${stareStage} started=${started} alive=${alive}`;
+  tick(dt);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
