@@ -116,6 +116,26 @@ let stareStage = 0;              // 0 = calm, 1 = angry, 2 = furious
 const FOLLOW_SIGN = 1;           // change to -1 if the eyes look the wrong way
 const follow = { x: 0, y: 0 };   // where the irises are looking (smoothed)
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+// ---- Caught counter ----
+const counter = document.getElementById("counter");
+const counterNum = document.getElementById("caughtNum");
+const CAUGHT_MILESTONES = {
+  3: "Three times. Are you doing this on purpose?",
+  5: "Five. You're relentless.",
+  10: "Ten. We need to talk.",
+  20: "Twenty. I'm calling security.",
+};
+let caught = 0;
+
+function countCatch() {
+  caught++;
+  counterNum.textContent = caught;
+  counter.classList.add("show");
+  counter.classList.remove("bump");
+  void counter.offsetWidth;                             // restarts the bump animation
+  counter.classList.add("bump");
+  return CAUGHT_MILESTONES[caught] || null;             // a special line at milestones
+}
 // ---- Tab title and icon ----
 const TITLE_NORMAL = "Synergix";
 const TITLES_AWAY = ["...is he gone?", "psst. over here.", "are you still there?", "come back..."];
@@ -184,7 +204,8 @@ window.addEventListener("watchedchange", (e) => {
       eyesOpen = false;
       reactToBeingCaught();
     }
-    say(pick(CAUGHT_LINES));
+     const milestone = awayTime > 2 ? countCatch() : null;   // only real catches count
+    say(milestone || pick(CAUGHT_LINES));
   }
 });// ---- Covering the camera ----
 let covered = false;
