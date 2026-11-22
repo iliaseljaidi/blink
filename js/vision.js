@@ -1,5 +1,6 @@
 import { FaceLandmarker, FilesetResolver } from
   "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm";
+  import { head } from "./shared.js";
 
 const label = document.getElementById("label");
 const debug = document.getElementById("debug");
@@ -39,7 +40,10 @@ let lastTime = -1;
 
 // ---- Decide if the user is looking at the screen ----
 function isLookingAtScreen(result) {
-  if (result.faceLandmarks.length === 0) return { looking: false, info: "no face" };
+    if (result.faceLandmarks.length === 0) {
+    head.seen = false;                                  // lost the face
+    return { looking: false, info: "no face" };
+  }
 
   // Turn the blendshape list into a simple lookup: { eyeBlinkLeft: 0.02, ... }
   const s = {};
@@ -55,6 +59,9 @@ function isLookingAtScreen(result) {
   // Head turn: where the nose sits between the two sides of the face
   const lm = result.faceLandmarks[0];
   const nose = lm[1], leftSide = lm[234], rightSide = lm[454];
+  head.seen = true;
+  head.x = 0.5 - nose.x;     // positive = your head is to the right of the screen centre
+  head.y = nose.y - 0.5;     // positive = your head is lower in the picture
   const yaw = (nose.x - leftSide.x) / (rightSide.x - leftSide.x) - 0.5;
 
   // Head and eyes added together: if they cancel out, you're still looking at the screen

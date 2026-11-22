@@ -1,5 +1,6 @@
 import { play, tick, wander } from "./face.js";
 import { burst } from "./effects.js";
+import { head } from "./shared.js";
 
 // ---- The page's voice: a caption that fades in and out ----
 const caption = document.getElementById("caption");
@@ -97,6 +98,9 @@ let spread = 1;                  // 1 = items out where they drifted, 0 = back h
 let tidySaid = false;
 let started = false;             // becomes true once the camera is running
 let stareStage = 0;              // 0 = calm, 1 = angry, 2 = furious
+const FOLLOW_SIGN = 1;           // change to -1 if the eyes look the wrong way
+const follow = { x: 0, y: 0 };   // where the irises are looking (smoothed)
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
 window.addEventListener("watchedchange", (e) => {
   if (!started) {                                       // first signal from the camera
@@ -218,8 +222,13 @@ function frame(now) {
   }
 
   // Irises wander while you're away
-  wander.x = Math.sin(t * 0.9) * 16;
-  wander.y = Math.sin(t * 1.3) * 7;
+  // Irises follow your head when they can see it, otherwise they wander looking for you
+  const wantX = head.seen ? head.x * 110 * FOLLOW_SIGN : Math.sin(t * 0.9) * 16;
+  const wantY = head.seen ? head.y * 100 : Math.sin(t * 1.3) * 7;
+  follow.x += (clamp(wantX, -28, 28) - follow.x) * Math.min(1, dt * 6);   // smooth glide
+  follow.y += (clamp(wantY, -12, 12) - follow.y) * Math.min(1, dt * 6);
+  wander.x = follow.x;
+  wander.y = follow.y;
 
   tick(dt);                                             // the face animates in real time, even when the page is frozen
     document.title = `watched=${watchedTime.toFixed(1)} stage=${stareStage} started=${started} alive=${alive}`;
