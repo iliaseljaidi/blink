@@ -42,3 +42,10 @@ body.eyes-open .mini-eye { transform: scaleY(1); opacity: 1;
 .mini-iris { transform: translate(var(--ix, 0px), var(--iy, 0px)); }
 
 .card, #cta, .logo, #headline { position: relative; }
+
+/* ---- Start screen ---- */
+#start { position: fixed; inset: 0; z-index: 100; background: #fff;
+         display: flex; flex-direction: column; align-items: center;
+         justify-content: center; gap: 12px; text-align: center; }
+#start button { background: #1a4fd6; color: #fff; border: none; padding: 14px 36px;
+                font-size: 1.1rem; border-radius: 6px; cursor: pointer; }

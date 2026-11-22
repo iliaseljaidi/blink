@@ -2,6 +2,7 @@ import { play, tick, wander } from "./face.js";
 import { burst } from "./effects.js";
 import { head } from "./shared.js";
 import { buildEyes, setEyesOpen, lookAt } from "./eyes.js";
+import { startAudio, sfx, loopOn, loopOff } from "./audio.js";
 
 // ---- The page's voice: a caption that fades in and out ----
 const caption = document.getElementById("caption");
@@ -40,18 +41,26 @@ const ANGRY_LINES = ["Hey.", "Stop it.", "I said STOP.", "...You're really doing
 
 // ---- The face's keyframe sequences ----
 function openEyes() {
+  sfx("eyes-open");
   play([{ to: "calm", dur: 0.7, ease: "out" }]);
 }
 function hideFace() {
   play([{ to: "hidden", dur: 0.2, ease: "in" }]);
 }
 // The face pops into the random lines at the centre of the screen
-function popFace() {
+// The random lines burst at the centre of the screen (no sound)
+function popLines() {
   burst(innerWidth / 2, innerHeight / 2, { count: 16, near: 70, far: 170 });
+}
+// Lines plus the pop sound
+function popFace() {
+  sfx("burst-pop");
+  popLines();
 }
 
 function reactToBeingCaught() {
   if (Math.random() < 0.5) {
+    sfx("gasp-shocked");
     play([                                              // SHOCKED: sharp pop, then settle
       { to: "shocked", with: { scale: 1.15 }, dur: 0.1, ease: "out" },
       { to: "shocked", dur: 0.15, ease: "inOut" },
@@ -59,10 +68,11 @@ function reactToBeingCaught() {
       { to: "hidden", dur: 0.25, ease: "in", onStart: popFace },
     ]);
   } else {
+    sfx("shy-eep");
     play([                                              // SHY: softer, with a little bounce
       { to: "shy", dur: 0.35, ease: "back" },
       { hold: 1.5 },
-      { to: "hidden", dur: 0.3, ease: "in", onStart: popFace },
+      { to: "hidden", dur: 0.3, ease: "in", onStart: popLines },
     ]);
   }
 }
@@ -183,6 +193,9 @@ window.addEventListener("coverchange", (e) => {
   if (covered) {
     eyesOpen = true;                                    // the face is out now
     say(pick(["Hey! No fair!", "I can't see you! Rude!", "Take your hand off the camera."]));
+    
+    sfx("gasp-shocked");
+        setTimeout(() => sfx("angry-growl"), 400);
     play([
       { to: "shocked", with: { scale: 1.2 }, dur: 0.1, ease: "out" },   // shock...
       { to: "angry", with: { scale: 1.1 }, dur: 0.3, ease: "inOut" },   // ...then offended
@@ -203,6 +216,7 @@ function poke() {
   const now = performance.now();
   pokes = now - lastPoke < 4000 ? pokes + 1 : 1;        // pokes only count if they're close together
   lastPoke = now;
+  sfx("angry-growl", 0.6, 1);
 
   say(ANGRY_LINES[Math.min(pokes, ANGRY_LINES.length) - 1]);   // gets angrier with each poke
   play([
@@ -214,7 +228,8 @@ function poke() {
 }
 
 window.addEventListener("click", (e) => {
-  burst(e.clientX, e.clientY);                          // every click pops the lines
+  burst(e.clientX, e.clientY);
+  sfx("burst-pop", 0.35, 0.6);               // every click pops the lines
 
   if (!alive) {                                         // you're looking: it's frozen
     say(pick(FROZEN_POKE_LINES));
@@ -251,9 +266,12 @@ function frame(now) {
   // Tidy up: after being watched for a while, everything slides back home
   if (alive) {
     spread = Math.min(1, spread + dt / 0.8);            // slides back out when you look away
-  } else {
+    loopOn("ambient-away", 0.3);
+    loopOff("heartbeat");
+} else {
     watchedTime += dt;
-
+    loopOff("ambient-away", 0.3);
+    if (hasBeenAlive && watchedTime > 3) loopOn("heartbeat", 0.6);
     // 1) After a few seconds of being watched, everything slides home
     if (hasBeenAlive && watchedTime > HOLD_BEFORE_TIDY && spread > 0) {
       if (!tidySaid) { tidySaid = true; say(pick(TIDY_LINES)); }
@@ -264,6 +282,7 @@ function frame(now) {
     if (started && stareStage < 1 && watchedTime > STARE_ANGRY_AT) {
       stareStage = 1;
       say("What are you looking at?");
+    sfx("angry-growl");
       play([
         { to: "angry", with: { scale: 1.12 }, dur: 0.12, ease: "out" },   // brows slam down
         { to: "angry", dur: 0.2, ease: "inOut" },
@@ -271,6 +290,7 @@ function frame(now) {
     } else if (stareStage === 1 && watchedTime > STARE_FURIOUS_AT) {
       stareStage = 2;
       say("I'M WARNING YOU.");
+    sfx("angry-growl", 1);
       play([{ to: "angry", with: { scale: 1.18, shake: 9 }, dur: 0.3, ease: "out" }]);
     }
   }
@@ -300,10 +320,19 @@ function frame(now) {
   wander.x = follow.x;
   wander.y = follow.y;
   const wantEyes = alive && awayTime > EYES_EVERYWHERE_AT && !covered;
-  if (setEyesOpen(wantEyes) && wantEyes) say(pick(EYES_LINES));
+  if (setEyesOpen(wantEyes)) {
+    if (wantEyes) say(pick(EYES_LINES));
+    else sfx("eyes-shut");                              // all the little eyes snap shut
+  }
   lookAt(follow.x * 0.3, follow.y * 0.4);
 
   tick(dt);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
+
+document.getElementById("startBtn").addEventListener("click", (e) => {
+  e.stopPropagation();                                  // don't count it as a poke
+  startAudio();
+  document.getElementById("start").remove();
+});
