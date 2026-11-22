@@ -1,6 +1,7 @@
 import { play, tick, wander } from "./face.js";
 import { burst } from "./effects.js";
 import { head } from "./shared.js";
+import { buildEyes, setEyesOpen, lookAt } from "./eyes.js";
 
 // ---- The page's voice: a caption that fades in and out ----
 const caption = document.getElementById("caption");
@@ -28,6 +29,8 @@ const MILESTONES = [
 const TIDY_LINES = ["Nothing to see here.", "Just a normal website.", "Everything is fine."];
 const STARE_ANGRY_AT = 8;        // seconds of staring before it gets angry
 const STARE_FURIOUS_AT = 14;     // seconds of staring before it gets furious
+const EYES_EVERYWHERE_AT = 12;
+const EYES_LINES = ["We're all awake.", "Don't turn around.", "Everyone's watching you now."];
 const FROZEN_POKE_LINES = [
   "I can't move when you look at me. Stop poking.",
   "Please don't touch the website.",
@@ -82,6 +85,8 @@ const things = [...document.querySelectorAll(
     sr: 0.4 + Math.random() * 0.8,
   };
 });
+
+buildEyes();
 
 // ---- State ----
 let alive = false;
@@ -294,6 +299,9 @@ function frame(now) {
   follow.y += (clamp(wantY, -12, 12) - follow.y) * Math.min(1, dt * 6);
   wander.x = follow.x;
   wander.y = follow.y;
+  const wantEyes = alive && awayTime > EYES_EVERYWHERE_AT && !covered;
+  if (setEyesOpen(wantEyes) && wantEyes) say(pick(EYES_LINES));
+  lookAt(follow.x * 0.3, follow.y * 0.4);
 
   tick(dt);
   requestAnimationFrame(frame);

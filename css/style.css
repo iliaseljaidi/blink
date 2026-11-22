@@ -19,7 +19,7 @@ h1 { font-size: 2.6rem; max-width: 700px; margin: 0 auto 16px; }
 #label { font-size: 1rem; }
 
 .nav a { display: inline-block; }
-body { overflow-x: hidden; }
+html, body { overflow: hidden; }
 
 #caption { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
            font-style: italic; font-size: 1.2rem; color: #888;
@@ -28,3 +28,17 @@ body { overflow-x: hidden; }
 
 #character { position: fixed; left: 50%; top: calc(50% - 120px); width: 440px;
              margin-left: -220px; pointer-events: none; z-index: 5; }
+
+/* ---- Eyes everywhere ---- */
+#eyesLayer { position: fixed; inset: 0; pointer-events: none; z-index: 4; }
+.mini-eyes { position: absolute; pointer-events: none; overflow: visible; }
+
+.mini-eye { transform-box: fill-box; transform-origin: center;
+            transform: scaleY(0); opacity: 0;
+            transition: transform 0.06s ease-in, opacity 0.06s ease-in; }
+body.eyes-open .mini-eye { transform: scaleY(1); opacity: 1;
+            transition: transform 0.45s ease-out var(--delay, 0s),
+                        opacity 0.15s ease-out var(--delay, 0s); }
+.mini-iris { transform: translate(var(--ix, 0px), var(--iy, 0px)); }
+
+.card, #cta, .logo, #headline { position: relative; }
