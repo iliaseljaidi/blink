@@ -33,6 +33,31 @@ const stream = await navigator.mediaDevices.getUserMedia({ video: true });
 video.srcObject = stream;
 await video.play();
 
+// ---- Detect a covered camera (a very dark or completely flat picture) ----
+const DARK_BELOW = 45;           // average brightness (0 to 255) below this = dark
+const FLAT_BELOW = 12;           // picture detail below this = flat (a hand or finger on the lens)
+const COVER_FRAMES = 10;         // frames in a row before we believe it (about 0.3s)
+const probe = document.createElement("canvas");
+probe.width = 32;
+probe.height = 24;
+const probeCtx = probe.getContext("2d", { willReadFrequently: true });
+let coverFrames = 0;
+
+function measurePicture() {
+  probeCtx.drawImage(video, 0, 0, 32, 24);                  // a tiny copy of the camera picture
+  const px = probeCtx.getImageData(0, 0, 32, 24).data;
+  const n = px.length / 4;
+  let sum = 0, sumSq = 0;
+  for (let i = 0; i < px.length; i += 4) {
+    const v = px[i] * 0.3 + px[i + 1] * 0.59 + px[i + 2] * 0.11;   // brightness of this pixel
+    sum += v;
+    sumSq += v * v;
+  }
+  const mean = sum / n;                                     // how bright the picture is
+  const detail = Math.sqrt(Math.max(0, sumSq / n - mean * mean));   // how much variety it has
+  return { mean, detail };
+}
+
 let watched = true;              // the page starts frozen
 let previousWatched = null;      // used to spot when the state changes
 let notLookingFrames = 0;
@@ -83,6 +108,15 @@ function loop() {
     lastTime = video.currentTime;
     const result = faceLandmarker.detectForVideo(video, performance.now());
     const { looking, info } = isLookingAtScreen(result);
+    // Is the camera covered? (no face, and the picture is dark or flat)
+    const pic = measurePicture();
+    const maybeCovered = !head.seen && (pic.mean < DARK_BELOW || pic.detail < FLAT_BELOW);
+    coverFrames = maybeCovered ? coverFrames + 1 : 0;
+    const covered = coverFrames >= COVER_FRAMES;
+    if (covered !== head.covered) {
+      head.covered = covered;
+      window.dispatchEvent(new CustomEvent("coverchange", { detail: { covered } }));
+    }
 
     if (looking) {
       watched = true;            // instant: freeze the moment you look back
@@ -99,7 +133,7 @@ function loop() {
     }
 
     label.textContent = watched ? "WATCHED" : "NOT WATCHED";
-    debug.textContent = info;
+    debug.textContent = `${info} | light ${pic.mean.toFixed(0)} detail ${pic.detail.toFixed(0)}`;
   }
   requestAnimationFrame(loop);
 }

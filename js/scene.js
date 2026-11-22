@@ -171,6 +171,23 @@ window.addEventListener("watchedchange", (e) => {
     }
     say(pick(CAUGHT_LINES));
   }
+});// ---- Covering the camera ----
+let covered = false;
+window.addEventListener("coverchange", (e) => {
+  covered = e.detail.covered;
+  if (covered) {
+    eyesOpen = true;                                    // the face is out now
+    say(pick(["Hey! No fair!", "I can't see you! Rude!", "Take your hand off the camera."]));
+    play([
+      { to: "shocked", with: { scale: 1.2 }, dur: 0.1, ease: "out" },   // shock...
+      { to: "angry", with: { scale: 1.1 }, dur: 0.3, ease: "inOut" },   // ...then offended
+    ]);
+  } else {
+    eyesOpen = false;
+    say("...Oh. There you are.");
+    popFace();                                          // bursts into lines and vanishes
+    hideFace();
+  }
 });
 
 // ---- Clicking and poking ----
@@ -220,7 +237,7 @@ function frame(now) {
       milestoneIndex++;
     }
 
-    if (!eyesOpen && awayTime > 5) {                    // 5 seconds away: eyes open
+    if (!eyesOpen && awayTime > 5 && !covered) {        // 5 seconds away: eyes open         // 5 seconds away: eyes open
       eyesOpen = true;
       openEyes();
     }
@@ -263,12 +280,13 @@ function frame(now) {
     const y = (Math.sin(t * o.sy + o.py) * 50 * amp + o.dirY * push) * home;
     const r = Math.sin(t * o.sr + o.pr) * 10 * amp * home;
     const s = 1 + Math.sin(t * 1.5 + o.pr) * 0.06 * amp * home;
-      titleTimer += dt;                                     // new tab title every few seconds while away
-  if (alive && titleTimer > 4) { titleTimer = 0; document.title = pick(TITLES_AWAY); }
     o.el.style.transform = `translate(${x}px, ${y}px) rotate(${r}deg) scale(${s})`;
   }
 
   // Irises wander while you're away
+  titleTimer += dt;                                     // new tab title every few seconds while away
+  if (alive && titleTimer > 4) { titleTimer = 0; document.title = pick(TITLES_AWAY); }
+
   // Irises follow your head when they can see it, otherwise they wander looking for you
   const wantX = head.seen ? head.x * 110 * FOLLOW_SIGN : Math.sin(t * 0.9) * 16;
   const wantY = head.seen ? head.y * 100 : Math.sin(t * 1.3) * 7;
