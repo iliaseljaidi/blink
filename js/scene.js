@@ -136,6 +136,19 @@ function countCatch() {
   counter.classList.add("bump");
   return CAUGHT_MILESTONES[caught] || null;             // a special line at milestones
 }
+
+// ---- Confession headline ----
+const headline = document.getElementById("headline");
+// Only the words, so the little eyes living inside the headline stay put
+const headlineText = [...headline.childNodes].find((n) => n.nodeType === 3);
+const HEADLINE_NORMAL = headlineText.textContent;
+const CONFESSIONS = [
+  { at: 18, text: "Streamlining Tomorrow's Enterprise Feelings" },
+  { at: 28, text: "We have been pretending to be busy." },
+  { at: 40, text: "Nobody here has ever been a synergy." },
+  { at: 55, text: "Please don't tell the investors." },
+];
+let confessionShown = -1;                               // -1 = the normal headline
 // ---- Tab title and icon ----
 const TITLE_NORMAL = "Synergix";
 const TITLES_AWAY = ["...is he gone?", "psst. over here.", "are you still there?", "come back..."];
@@ -347,6 +360,13 @@ function frame(now) {
   }
   lookAt(follow.x * 0.3, follow.y * 0.4);
 
+  // Confession headline: the longer you're away, the more honest it gets
+  let wantConf = -1;
+  if (alive) CONFESSIONS.forEach((c, i) => { if (awayTime > c.at) wantConf = i; });
+  if (wantConf !== confessionShown) {
+    confessionShown = wantConf;
+    headlineText.textContent = wantConf >= 0 ? CONFESSIONS[wantConf].text : HEADLINE_NORMAL;
+  }
   tick(dt);
   requestAnimationFrame(frame);
 }
