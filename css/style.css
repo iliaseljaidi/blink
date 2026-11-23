@@ -60,3 +60,9 @@ body.eyes-open .mini-eye { transform: scaleY(1); opacity: 1;
 
 /* ---- Confession headline ---- */
 #headline { min-height: 2.3em; }
+
+/* ---- Stare contest ---- */
+#stare { position: fixed; left: 16px; bottom: 40px; font-size: 0.9rem; color: #888;
+         opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 6;
+         font-variant-numeric: tabular-nums; }
+#stare.show { opacity: 1; }

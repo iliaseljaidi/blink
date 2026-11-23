@@ -30,6 +30,7 @@ const MILESTONES = [
 const TIDY_LINES = ["Nothing to see here.", "Just a normal website.", "Everything is fine."];
 const STARE_ANGRY_AT = 8;        // seconds of staring before it gets angry
 const STARE_FURIOUS_AT = 14;     // seconds of staring before it gets furious
+const STARE_WIN_AT = 20;         // seconds of eye contact to win the contest
 const EYES_EVERYWHERE_AT = 12;
 const EYES_LINES = ["We're all awake.", "Don't turn around.", "Everyone's watching you now."];
 const FROZEN_POKE_LINES = [
@@ -148,7 +149,27 @@ const CONFESSIONS = [
   { at: 40, text: "Nobody here has ever been a synergy." },
   { at: 55, text: "Please don't tell the investors." },
 ];
-let confessionShown = -1;                               // -1 = the normal headline
+let confessionShown = -1;
+
+// ---- Stare contest ----
+const stareBox = document.getElementById("stare");
+const stareNow = document.getElementById("stareNow");
+const stareBestEl = document.getElementById("stareBest");
+let bestStare = 0;
+
+// Called when you look away. Returns the line to say, or null if the stare was too short to count.
+function finishStare(seconds) {
+  if (seconds < 3) return null;                         // quick glances don't count
+  const record = seconds > bestStare;
+  if (record) {
+    bestStare = seconds;
+    stareBestEl.textContent = seconds.toFixed(1);
+  }
+  return record
+    ? `You blinked first. New record: ${seconds.toFixed(1)}s!`
+    : `You blinked first. ${seconds.toFixed(1)}s.`;
+}
+                               // -1 = the normal headline
 // ---- Tab title and icon ----
 const TITLE_NORMAL = "Synergix";
 const TITLES_AWAY = ["...is he gone?", "psst. over here.", "are you still there?", "come back..."];
@@ -202,15 +223,16 @@ window.addEventListener("watchedchange", (e) => {
   document.title = alive ? pick(TITLES_AWAY) : TITLE_NORMAL;   // tab title follows the state
   setIcon(alive);
   titleTimer = 0;
-  if (alive) {
-    if (stareStage > 0) popFace();                      // angry face bursts into lines
+   if (alive) {
+    const held = watchedTime;                           // how long that stare lasted
+    if (stareStage > 0 && stareStage < 3) popFace();    // angry face bursts into lines                  // angry face bursts into lines                   // angry face bursts into lines
     stareStage = 0;
     watchedTime = 0;
     tidySaid = false;
     awayTime = 0;
     eyesOpen = false;
     hideFace();                                         // looked away again: face disappears
-    say(pick(WAKE_LINES));
+    say(finishStare(held) || pick(WAKE_LINES));         // announce the result of a real stare
     hasBeenAlive = true;
   } else if (hasBeenAlive) {
     if (eyesOpen) {                                     // caught with eyes open: the face reacts
@@ -326,6 +348,15 @@ function frame(now) {
       say("I'M WARNING YOU.");
     sfx("angry-growl", 1);
       play([{ to: "angry", with: { scale: 1.18, shake: 9 }, dur: 0.3, ease: "out" }]);
+    } else if (stareStage === 2 && watchedTime > STARE_WIN_AT) {
+      stareStage = 3;                                   // you win: the page gives up
+      say("...Okay. You win. Please stop.");
+      sfx("shy-eep");
+      play([
+        { to: "shy", dur: 0.4, ease: "back" },
+        { hold: 1.5 },
+        { to: "hidden", dur: 0.3, ease: "in", onStart: popLines },
+      ]);
     }
   }
   const home = spread * spread * (3 - 2 * spread);      // smooth start and stop
@@ -367,6 +398,11 @@ function frame(now) {
     confessionShown = wantConf;
     headlineText.textContent = wantConf >= 0 ? CONFESSIONS[wantConf].text : HEADLINE_NORMAL;
   }
+
+  // Stare contest display: shows the timer once you've been looking for 3 seconds
+  const staring = started && !alive && watchedTime > 3;
+  stareBox.classList.toggle("show", staring);
+  if (staring) stareNow.textContent = watchedTime.toFixed(1);
   tick(dt);
   requestAnimationFrame(frame);
 }
@@ -375,5 +411,8 @@ requestAnimationFrame(frame);
 document.getElementById("startBtn").addEventListener("click", (e) => {
   e.stopPropagation();                                  // don't count it as a poke
   startAudio();
+  watchedTime = 0;                                      // the contest starts now
+  stareStage = 0;
+  hideFace();
   document.getElementById("start").remove();
 });
